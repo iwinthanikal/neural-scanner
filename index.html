@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neural Cognitive Scanner</title>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <style>
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background-color: #050505; color: #00ffcc;
+            font-family: 'Courier New', Courier, monospace;
+            overflow: hidden;
+        }
+        #container { position: relative; width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; }
+        video { display: none; }
+        canvas { 
+            position: absolute; z-index: 1; 
+            filter: drop-shadow(0 0 8px #00ffcc); 
+            transform: scaleX(-1); /* Mirror the camera */
+        }
+        .overlay {
+            position: absolute; top: 30px; left: 30px; z-index: 2;
+            border-left: 3px solid #00ffcc; padding-left: 20px;
+            background: rgba(0, 0, 0, 0.7); padding: 25px; border-radius: 4px;
+            box-shadow: 0 0 20px rgba(0, 255, 204, 0.15);
+            backdrop-filter: blur(5px);
+        }
+        h1 { font-size: 1.4rem; margin: 0 0 15px 0; text-transform: uppercase; letter-spacing: 3px; }
+        p { margin: 8px 0; font-size: 1rem; letter-spacing: 1px;}
+        .loader { margin-top: 20px; width: 100%; height: 3px; background: #222; position: relative; overflow: hidden; }
+        .loader::after { 
+            content: ''; position: absolute; top: 0; left: 0; width: 40%; height: 100%; 
+            background: #00ffcc; animation: scan 2s infinite ease-in-out; 
+        }
+        @keyframes scan { 0% { left: -40%; } 100% { left: 100%; } }
+        .grid {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: linear-gradient(rgba(0, 255, 204, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 255, 204, 0.05) 1px, transparent 1px);
+            background-size: 50px 50px; z-index: 0; pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div class="grid"></div>
+        <div class="overlay">
+            <h1>Biometric Neural Sync</h1>
+            <p id="status">STATUS: INITIALIZING AI VISION...</p>
+            <p id="sync">SYNC RATE: 0.00%</p>
+            <p id="nodes">ACTIVE NEURAL NODES: 0</p>
+            <div class="loader"></div>
+        </div>
+        <video id="input_video" autoplay playsinline></video>
+        <canvas id="output_canvas"></canvas>
+    </div>
+
+    <script>
+        const videoElement = document.getElementById('input_video');
+        const canvasElement = document.getElementById('output_canvas');
+        const canvasCtx = canvasElement.getContext('2d');
+        const statusEl = document.getElementById('status');
+        const syncEl = document.getElementById('sync');
+        const nodesEl = document.getElementById('nodes');
+
+        // Fit canvas to screen
+        function resizeCanvas() {
+            canvasElement.width = window.innerWidth;
+            canvasElement.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // The logic for the AI overlay
+        function onResults(results) {
+            statusEl.innerText = "STATUS: TRACKING COGNITIVE PATHWAYS";
+            canvasCtx.save();
+            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+            
+            // Draw video feed on canvas (Optional: comment this out if you ONLY want the neon mesh and a black background)
+            canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
+            
+            if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
+                const landmarks = results.multiFaceLandmarks[0];
+                
+                // Generate fake tech metrics
+                syncEl.innerText = `SYNC RATE: ${(Math.random() * 1.5 + 98).toFixed(2)}%`;
+                nodesEl.innerText = `ACTIVE NEURAL NODES: 468`;
+                
+                // Draw the glowing neon mesh
+                drawConnectors(canvasCtx, landmarks, FACEMESH_TESSELATION, {color: 'rgba(0, 255, 204, 0.5)', lineWidth: 0.5});
+                drawConnectors(canvasCtx, landmarks, FACEMESH_RIGHT_EYE, {color: '#ffffff', lineWidth: 1.5});
+                drawConnectors(canvasCtx, landmarks, FACEMESH_LEFT_EYE, {color: '#ffffff', lineWidth: 1.5});
+                drawConnectors(canvasCtx, landmarks, FACEMESH_FACE_OVAL, {color: '#00ffcc', lineWidth: 2});
+            } else {
+                syncEl.innerText = "SYNC RATE: 0.00%";
+                nodesEl.innerText = "ACTIVE NEURAL NODES: 0";
+                statusEl.innerText = "STATUS: SEARCHING FOR SUBJECT...";
+            }
+            canvasCtx.restore();
+        }
+
+        // Initialize the computer vision model
+        const faceMesh = new FaceMesh({locateFile: (file) => {
+            return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
+        }});
+        faceMesh.setOptions({
+            maxNumFaces: 1,
+            refineLandmarks: true,
+            minDetectionConfidence: 0.5,
+            minTrackingConfidence: 0.5
+        });
+        faceMesh.onResults(onResults);
+
+        // Turn on the webcam
+        const camera = new Camera(videoElement, {
+            onFrame: async () => { await faceMesh.send({image: videoElement}); },
+            width: 1280,
+            height: 720
+        });
+        camera.start();
+    </script>
+</body>
+</html>
