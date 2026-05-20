@@ -1,250 +1,474 @@
-        linear-gradient(145deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.01)),
-        #07090d;
-      box-shadow: 0 20px 70px rgba(0, 0, 0, 0.46);
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Facial Aesthetics Analyzer</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 28px;
+      background: radial-gradient(circle at top left, #12332f, transparent 420px),
+                  linear-gradient(135deg, #080a0f, #121622 55%, #090b10);
+      color: #f5f7fb;
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .app {
+      width: min(960px, 100%);
+      text-align: center;
+    }
+
+    .tag {
+      color: #66f2d5;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(34px, 7vw, 72px);
+      line-height: 0.95;
+      letter-spacing: 0;
+    }
+
+    .sub {
+      max-width: 650px;
+      margin: 18px auto 28px;
+      color: #aab4c4;
+      line-height: 1.6;
+      font-size: 17px;
+    }
+
+    .panel {
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 26px;
+      background: rgba(17, 20, 28, 0.8);
+      box-shadow: 0 30px 90px rgba(0,0,0,0.5);
+      overflow: hidden;
+      padding: 18px;
+    }
+
+    .videoBox {
+      position: relative;
+      overflow: hidden;
+      border-radius: 22px;
+      aspect-ratio: 16 / 10;
+      min-height: 330px;
+      background: #0b0f16;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
     }
 
     video {
       width: 100%;
       height: 100%;
-      display: block;
       object-fit: cover;
+      display: block;
       transform: scaleX(-1);
     }
 
-    .camera-placeholder {
+    .message {
       position: absolute;
       inset: 0;
       display: grid;
       place-items: center;
-      padding: 28px;
-      color: var(--muted);
-      text-align: center;
-      line-height: 1.55;
-      background:
-        linear-gradient(120deg, rgba(102, 242, 213, 0.08), transparent),
-        linear-gradient(315deg, rgba(183, 168, 255, 0.1), transparent);
+      padding: 24px;
+      color: #aab4c4;
+      background: linear-gradient(135deg, rgba(102,242,213,0.08), rgba(183,168,255,0.08));
+      line-height: 1.5;
     }
 
-    .camera-placeholder.hidden,
     .hidden {
       display: none !important;
     }
 
-    .scan-overlay {
+    .scan {
       position: absolute;
       inset: 0;
       display: none;
       pointer-events: none;
-      background:
-        linear-gradient(90deg, rgba(102, 242, 213, 0.1) 1px, transparent 1px),
-        linear-gradient(0deg, rgba(102, 242, 213, 0.08) 1px, transparent 1px);
-      background-size: 44px 44px;
+      background-image:
+        linear-gradient(rgba(102,242,213,0.12) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(102,242,213,0.12) 1px, transparent 1px);
+      background-size: 42px 42px;
     }
 
-    .scan-overlay.active {
+    .scan.active {
       display: block;
-      animation: gridPulse 1.4s ease-in-out infinite;
     }
 
-    .scan-overlay::before {
+    .scan::before {
       content: "";
       position: absolute;
       left: 0;
       right: 0;
-      top: -22%;
-      height: 22%;
-      background: linear-gradient(180deg, transparent, rgba(102, 242, 213, 0.38), transparent);
-      filter: drop-shadow(0 0 28px rgba(102, 242, 213, 0.65));
-      animation: scanLine 2.05s ease-in-out infinite;
+      top: -20%;
+      height: 20%;
+      background: linear-gradient(180deg, transparent, rgba(102,242,213,0.55), transparent);
+      filter: drop-shadow(0 0 28px #66f2d5);
+      animation: scanLine 1.8s infinite ease-in-out;
     }
 
-    .scan-overlay::after {
+    .scan::after {
       content: "";
       position: absolute;
-      inset: 16%;
-      border: 1px solid rgba(102, 242, 213, 0.6);
+      inset: 18%;
+      border: 1px solid rgba(102,242,213,0.7);
       border-radius: 50%;
-      box-shadow:
-        0 0 0 1px rgba(255, 255, 255, 0.08),
-        0 0 38px rgba(102, 242, 213, 0.22),
-        inset 0 0 36px rgba(102, 242, 213, 0.1);
-      animation: reticle 1.8s ease-in-out infinite;
+      box-shadow: 0 0 40px rgba(102,242,213,0.35), inset 0 0 35px rgba(102,242,213,0.15);
+      animation: pulse 1.5s infinite ease-in-out;
+    }
+
+    @keyframes scanLine {
+      from { transform: translateY(0); opacity: 0; }
+      15% { opacity: 1; }
+      85% { opacity: 1; }
+      to { transform: translateY(600%); opacity: 0; }
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(0.98); opacity: 0.75; }
+      50% { transform: scale(1.04); opacity: 1; }
     }
 
     .controls {
       display: flex;
-      flex-wrap: wrap;
-      align-items: center;
       justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
       gap: 14px;
-      padding: 0 18px 20px;
+      margin-top: 20px;
     }
 
     button {
-      min-height: 52px;
       border: 0;
+      min-height: 54px;
+      padding: 0 26px;
       border-radius: 999px;
-      padding: 0 24px;
-      color: #06100e;
-      background: linear-gradient(135deg, var(--accent), #d6fff4);
-      box-shadow: 0 12px 40px rgba(102, 242, 213, 0.24);
       cursor: pointer;
       font: inherit;
-      font-weight: 800;
-      letter-spacing: 0;
-      transition: transform 180ms ease, box-shadow 180ms ease, opacity 180ms ease;
-    }
-
-    button:hover:not(:disabled) {
-      transform: translateY(-2px);
-      box-shadow: 0 18px 48px rgba(102, 242, 213, 0.32);
+      font-weight: 850;
+      color: #06100e;
+      background: linear-gradient(135deg, #66f2d5, #d8fff5);
+      box-shadow: 0 16px 46px rgba(102,242,213,0.28);
     }
 
     button:disabled {
+      opacity: 0.5;
       cursor: not-allowed;
-      opacity: 0.58;
     }
 
     .status {
-      min-height: 22px;
-      color: var(--muted);
-      font-size: 0.92rem;
+      color: #9aa5b7;
+      font-size: 14px;
     }
 
     .results {
       display: none;
+      padding: 24px;
       gap: 18px;
-      padding: 22px;
     }
 
-    .results.visible {
+    .results.show {
       display: grid;
     }
 
-    .score-card {
-      display: grid;
-      gap: 12px;
-      justify-items: center;
-      padding: clamp(26px, 5vw, 44px);
-      border: 1px solid rgba(102, 242, 213, 0.18);
+    .scoreCard {
+      padding: 34px 20px;
       border-radius: 22px;
-      background:
-        linear-gradient(135deg, rgba(102, 242, 213, 0.11), rgba(183, 168, 255, 0.08)),
-        rgba(10, 13, 19, 0.82);
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
-      text-align: center;
+      border: 1px solid rgba(102,242,213,0.22);
+      background: linear-gradient(135deg, rgba(102,242,213,0.12), rgba(183,168,255,0.09));
     }
 
-    .score-label {
-      color: var(--muted);
-      font-size: 0.78rem;
-      font-weight: 700;
-      letter-spacing: 0.18em;
+    .scoreLabel {
+      color: #9aa5b7;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 3px;
       text-transform: uppercase;
     }
 
     .score {
-      font-size: clamp(4.4rem, 13vw, 8.6rem);
-      font-weight: 900;
+      margin-top: 10px;
+      font-size: clamp(72px, 14vw, 140px);
       line-height: 0.9;
-      text-shadow: 0 0 34px rgba(102, 242, 213, 0.34);
+      font-weight: 950;
+      text-shadow: 0 0 35px rgba(102,242,213,0.45);
     }
 
-    .score .score-scale {
-      color: var(--muted);
+    .score small {
+      color: #9aa5b7;
       font-size: 0.28em;
-      font-weight: 700;
     }
 
-    .result-grid {
+    .grid {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: 1fr 1fr;
       gap: 18px;
     }
 
-    .result-panel {
-      min-width: 0;
+    .card {
+      text-align: left;
       padding: 22px;
-      border: 1px solid var(--line);
       border-radius: 18px;
-      background: rgba(16, 19, 27, 0.76);
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(12, 15, 22, 0.78);
     }
 
-    .result-panel h2 {
-      margin: 0 0 16px;
-      font-size: 1rem;
-      letter-spacing: 0;
+    .card h2 {
+      margin: 0 0 14px;
+      font-size: 18px;
     }
 
     ul {
-      display: grid;
-      gap: 12px;
       margin: 0;
       padding: 0;
       list-style: none;
+      display: grid;
+      gap: 12px;
+      color: #dce4ef;
+      line-height: 1.45;
     }
 
     li {
+      padding-left: 18px;
       position: relative;
-      padding-left: 20px;
-      color: #dbe2ee;
-      line-height: 1.48;
     }
 
     li::before {
       content: "";
-      position: absolute;
-      top: 0.62em;
-      left: 0;
       width: 8px;
       height: 8px;
       border-radius: 50%;
-      background: var(--accent);
-      box-shadow: 0 0 18px rgba(102, 242, 213, 0.62);
+      background: #66f2d5;
+      position: absolute;
+      left: 0;
+      top: 9px;
     }
 
     .cons li::before {
-      background: var(--danger);
-      box-shadow: 0 0 18px rgba(255, 140, 154, 0.45);
+      background: #ff8c9a;
     }
 
-    .disclaimer {
-      color: var(--muted);
-      font-size: 0.86rem;
-      line-height: 1.55;
-      text-align: center;
+    .note {
+      color: #9aa5b7;
+      font-size: 13px;
+      line-height: 1.5;
     }
 
-    @keyframes scanLine {
-      0% {
-        transform: translateY(0);
-        opacity: 0;
+    @media (max-width: 720px) {
+      body {
+        padding: 16px;
       }
 
-      12%,
-      88% {
-        opacity: 1;
+      .videoBox {
+        aspect-ratio: 4 / 5;
+        min-height: 300px;
       }
 
-      100% {
-        transform: translateY(560%);
-        opacity: 0;
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="app">
+    <div class="tag">Visionary Scan System</div>
+    <h1>Facial Aesthetics Analyzer</h1>
+    <p class="sub">A sleek webcam-based demo that simulates facial harmony, symmetry, and proportion feedback.</p>
+
+    <section class="panel">
+      <div id="cameraArea">
+        <div class="videoBox">
+          <video id="video" autoplay muted playsinline></video>
+          <div id="message" class="message">Requesting camera access...</div>
+          <div id="scan" class="scan"></div>
+        </div>
+
+        <div class="controls">
+          <button id="analyzeBtn" disabled>Analyze Facial Aesthetics</button>
+          <div id="status" class="status">Initializing camera...</div>
+        </div>
+      </div>
+
+      <div id="results" class="results">
+        <div class="scoreCard">
+          <div class="scoreLabel">Composite Aesthetic Rating</div>
+          <div class="score"><span id="score">0.0</span><small>/10</small></div>
+          <p class="note">Entertainment demo only. This is not a medical, biometric, or scientific facial assessment.</p>
+        </div>
+
+        <div class="grid">
+          <div class="card">
+            <h2>Pros</h2>
+            <ul id="pros"></ul>
+          </div>
+
+          <div class="card cons">
+            <h2>Cons</h2>
+            <ul id="cons"></ul>
+          </div>
+        </div>
+
+        <div class="controls">
+          <button id="againBtn">Run Another Scan</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const video = document.getElementById("video");
+    const message = document.getElementById("message");
+    const statusText = document.getElementById("status");
+    const analyzeBtn = document.getElementById("analyzeBtn");
+    const againBtn = document.getElementById("againBtn");
+    const scan = document.getElementById("scan");
+    const cameraArea = document.getElementById("cameraArea");
+    const results = document.getElementById("results");
+    const scoreEl = document.getElementById("score");
+    const prosEl = document.getElementById("pros");
+    const consEl = document.getElementById("cons");
+
+    let stream = null;
+    let scanning = false;
+
+    const prosText = [
+      "Balanced facial thirds create a refined overall composition.",
+      "Strong perceived eye symmetry gives the face a centered appearance.",
+      "Defined jawline structure adds clarity to the lower face.",
+      "Cheekbone placement creates a lifted, photogenic contour.",
+      "Nose-to-lip proportions appear harmonious in the current framing.",
+      "Brow positioning frames the upper face cleanly.",
+      "Good vertical alignment between eyes, nose, and mouth.",
+      "Soft lighting produces a polished skin presentation."
+    ];
+
+    const consText = [
+      "Slight asymmetry may be visible between the left and right sides.",
+      "Jawline contrast could improve with stronger side lighting.",
+      "Camera angle may compress midface proportions.",
+      "Eye balance can shift with lens distance and head tilt.",
+      "Lower-face definition is softened by the current lighting.",
+      "A centered, eye-level camera may improve perceived symmetry.",
+      "Shadow placement makes cheek contour harder to read.",
+      "Expression changes can affect perceived facial harmony."
+    ];
+
+    function random() {
+      if (window.crypto && window.crypto.getRandomValues) {
+        const arr = new Uint32Array(1);
+        window.crypto.getRandomValues(arr);
+        return arr[0] / 4294967295;
+      }
+      return Math.random();
+    }
+
+    function pick(list, count) {
+      return list
+        .slice()
+        .sort(() => random() - 0.5)
+        .slice(0, count);
+    }
+
+    function renderList(el, items) {
+      el.innerHTML = "";
+      items.forEach(text => {
+        const li = document.createElement("li");
+        li.textContent = text;
+        el.appendChild(li);
+      });
+    }
+
+    async function startCamera() {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        message.textContent = "Camera access is not supported in this browser.";
+        statusText.textContent = "Camera unavailable.";
+        return;
+      }
+
+      try {
+        statusText.textContent = "Waiting for camera permission...";
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: "user",
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          },
+          audio: false
+        });
+
+        video.srcObject = stream;
+        message.classList.add("hidden");
+        analyzeBtn.disabled = false;
+        statusText.textContent = "Camera ready.";
+      } catch (err) {
+        message.textContent = "Camera permission was blocked. Allow camera access in your browser, then refresh.";
+        statusText.textContent = "Camera unavailable.";
+        analyzeBtn.disabled = true;
       }
     }
 
-    @keyframes gridPulse {
-      0%,
-      100% {
-        opacity: 0.86;
-      }
+    function showResults() {
+      const score = (7.1 + random() * 1.8).toFixed(1);
 
-      50% {
-        opacity: 0.56;
-      }
+      scoreEl.textContent = score;
+      renderList(prosEl, pick(prosText, 4));
+      renderList(consEl, pick(consText, 3));
+
+      cameraArea.classList.add("hidden");
+      results.classList.add("show");
     }
 
-    @keyframes reticle {
-      0%,
-      100% {
-        transform: scale(0.98);
-        opacity: 0.8;
+    function analyze() {
+      if (!stream || scanning) return;
+
+      scanning = true;
+      analyzeBtn.disabled = true;
+      scan.classList.add("active");
+      statusText.textContent = "Scanning facial landmarks...";
+
+      setTimeout(() => {
+        scan.classList.remove("active");
+        scanning = false;
+        showResults();
+      }, 6500);
+    }
+
+    function reset() {
+      results.classList.remove("show");
+      cameraArea.classList.remove("hidden");
+      analyzeBtn.disabled = !stream;
+      statusText.textContent = stream ? "Camera ready." : "Camera unavailable.";
+    }
+
+    analyzeBtn.addEventListener("click", analyze);
+    againBtn.addEventListener("click", reset);
+
+    window.addEventListener("beforeunload", () => {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+    });
+
+    startCamera();
+  </script>
+</body>
+</html>
