@@ -98,3 +98,183 @@
       border: 1px solid var(--line);
       border-radius: 999px;
       color: var(--muted);
+        showCameraError("Camera access is not supported by this browser. You can still use demo mode.");
+        return;
+      }
+
+      try {
+        statusText.textContent = "Awaiting camera permission...";
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: false
+        });
+        video.srcObject = stream;
+        message.classList.add("hidden");
+        analyzeButton.disabled = false;
+        statusText.textContent = "Camera ready.";
+      } catch (error) {
+        showCameraError("Camera permission was blocked. Allow camera access or use demo mode.");
+      }
+    }
+
+    function showCameraError(text) {
+      message.textContent = text;
+      message.classList.remove("hidden");
+      analyzeButton.disabled = true;
+      statusText.textContent = "Camera unavailable.";
+    }
+
+    function setScanning(active, label) {
+      scanning = active;
+      scan.classList.toggle("active", active);
+      analyzeButton.disabled = active || (!stream && !label);
+      skipButton.disabled = active;
+      statusText.textContent = active ? label : stream ? "Camera ready." : "Camera unavailable.";
+    }
+
+    function renderStats(container, stats) {
+      container.innerHTML = "";
+      Object.entries(stats).forEach(([name, value]) => {
+        const stat = document.createElement("div");
+        stat.className = "stat";
+        stat.innerHTML = '<div class="stat-top"><span>' + name + '</span><span>' + value + '%</span></div><div class="bar"><div class="fill" style="--value:' + value + '%"></div></div>';
+        container.appendChild(stat);
+      });
+    }
+
+    function renderList(container, items) {
+      container.innerHTML = "";
+      items.forEach((item) => {
+        const li = document.createElement("li");
+        li.textContent = item;
+        container.appendChild(li);
+      });
+    }
+
+    function renderBadges(profile) {
+      badges.innerHTML = "";
+      [profile.title, "Top Stat: " + topStat(profile), "Shareable Score"].forEach((text) => {
+        const badge = document.createElement("span");
+        badge.className = "badge";
+        badge.textContent = text;
+        badges.appendChild(badge);
+      });
+    }
+
+    function topStat(profile) {
+      return Object.entries(profile.stats).sort((a, b) => b[1] - a[1])[0][0];
+    }
+
+    function showSolo(profile) {
+      resultTitle.textContent = profile.name + "'s Composite Rating";
+      mainScore.textContent = profile.rating.toFixed(1);
+      renderBadges(profile);
+      renderStats(soloStats, profile.stats);
+      renderList(soloHighlights, profile.highlights);
+      soloCards.classList.remove("hidden");
+      compareCards.classList.add("hidden");
+      lastShare = "I scored " + profile.rating.toFixed(1) + "/10 on Neural Scanner with " + profile.title + ". Top stat: " + topStat(profile) + ".";
+      shareText.textContent = lastShare;
+      openResults();
+    }
+
+    function showCompare(first, second) {
+      const winner = first.rating >= second.rating ? first : second;
+      const gap = Math.abs(first.rating - second.rating).toFixed(1);
+
+      resultTitle.textContent = "Friend Battle Winner";
+      mainScore.textContent = winner.rating.toFixed(1);
+      badges.innerHTML = "";
+      ["Winner: " + winner.name, "Gap: " + gap, "Viral Compare Card"].forEach((text) => {
+        const badge = document.createElement("span");
+        badge.className = "badge";
+        badge.textContent = text;
+        badges.appendChild(badge);
+      });
+
+      compareCards.innerHTML = "";
+      [first, second].forEach((profile) => {
+        const card = document.createElement("article");
+        card.className = "card";
+        card.innerHTML = '<div class="mini-score"><div><h3>' + profile.name + '</h3><span>' + profile.title + '</span></div><strong>' + profile.rating.toFixed(1) + '</strong></div><div class="stat-list"></div>';
+        renderStats(card.querySelector(".stat-list"), profile.stats);
+        compareCards.appendChild(card);
+      });
+
+      soloCards.classList.add("hidden");
+      compareCards.classList.remove("hidden");
+      lastShare = first.name + " vs " + second.name + " on Neural Scanner: " + first.rating.toFixed(1) + " vs " + second.rating.toFixed(1) + ". Winner: " + winner.name + " by " + gap + " points.";
+      shareText.textContent = lastShare;
+      openResults();
+    }
+
+    function openResults() {
+      cameraPanel.classList.add("hidden");
+      results.classList.add("visible");
+      copyStatus.textContent = "";
+    }
+
+    function runScan(useDemo = false) {
+      if (scanning) return;
+      if (!stream && !useDemo) return;
+
+      const label = mode === "compare" && pendingCompare.length === 1
+        ? "Scanning friend stats..."
+        : "Scanning facial landmarks...";
+
+      setScanning(true, label);
+
+      setTimeout(() => {
+        setScanning(false);
+        if (mode === "solo") {
+          showSolo(makeProfile(cleanName(yourName, "You")));
+          return;
+        }
+
+        if (pendingCompare.length === 0) {
+          pendingCompare.push(makeProfile(cleanName(yourName, "You")));
+          analyzeButton.textContent = "Scan Friend";
+          stepTitle.textContent = "Step 2: scan your friend";
+          stepCopy.textContent = "Pass the camera over and hit scan again to reveal the battle card.";
+          statusText.textContent = "Your scan saved. Ready for friend scan.";
+          return;
+        }
+
+        pendingCompare.push(makeProfile(cleanName(friendName, "Friend")));
+        showCompare(pendingCompare[0], pendingCompare[1]);
+      }, SCAN_MS);
+    }
+
+    function reset() {
+      pendingCompare = [];
+      results.classList.remove("visible");
+      cameraPanel.classList.remove("hidden");
+      setMode(mode);
+      analyzeButton.disabled = !stream;
+      statusText.textContent = stream ? "Camera ready." : "Camera unavailable.";
+    }
+
+    async function copyResult() {
+      try {
+        await navigator.clipboard.writeText(lastShare + " " + location.href);
+        copyStatus.textContent = "Copied. Post it anywhere.";
+      } catch (error) {
+        copyStatus.textContent = lastShare;
+      }
+    }
+
+    soloMode.addEventListener("click", () => setMode("solo"));
+    compareMode.addEventListener("click", () => setMode("compare"));
+    analyzeButton.addEventListener("click", () => runScan(false));
+    skipButton.addEventListener("click", () => runScan(true));
+    resetButton.addEventListener("click", reset);
+    copyButton.addEventListener("click", copyResult);
+    window.addEventListener("beforeunload", () => {
+      if (stream) stream.getTracks().forEach((track) => track.stop());
+    });
+
+    setMode("solo");
+    initCamera();
+  </script>
+</body>
+</html>
